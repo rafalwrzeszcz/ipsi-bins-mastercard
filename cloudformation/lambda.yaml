@@ -1,0 +1,27 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Transform:
+    - "AWS::Serverless-2016-10-31"
+
+Parameters:
+    # TODO
+
+Resources:
+    MasterCardBinsHandler:
+        Type: "AWS::Serverless::Function"
+        Properties:
+            CodeUri: # TODO
+            Handler: "index.handler"
+            MemorySize: 512
+            Runtime: "python3.12"
+            Tracing: "Active"
+            Timeout: 900
+            Environment:
+                Variables:
+                    # TODO
+            # TODO: policies
+            Events:
+                Schedule:
+                    Type: "ScheduleV2"
+                    Properties:
+                        ScheduleExpression: "rate(1 day)"
