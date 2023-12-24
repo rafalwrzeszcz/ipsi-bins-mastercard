@@ -4,7 +4,15 @@ Transform:
     - "AWS::Serverless-2016-10-31"
 
 Parameters:
-    # TODO
+    BinsTableName:
+        Type: "String"
+
+    MastercardSecretName:
+        Type: "String"
+
+    MastercardApiUrl:
+        Type: "String"
+        Default: "https://sandbox.api.mastercard.com/"
 
 Resources:
     MasterCardBinsHandler:
@@ -18,8 +26,28 @@ Resources:
             Timeout: 900
             Environment:
                 Variables:
-                    # TODO
-            # TODO: policies
+                    BINS_TABLE_NAME: !Ref "BinsTableName"
+                    SECRET_NAME: !Ref "MastercardSecretName"
+                    API_URL: !Ref "MastercardApiUrl"
+            Policies:
+                -
+                    Version: "2012-10-17"
+                    Statement:
+                        -
+                            Action:
+                                - "dynamodb:PutItem"
+                            Effect: "Allow"
+                            Resource:
+                                - !Sub "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${BinsTableName}"
+                -
+                    Version: "2012-10-17"
+                    Statement:
+                        -
+                            Action:
+                                - "secretsmanager:GetSecretValue"
+                            Effect: "Allow"
+                            Resource:
+                                - !Sub "arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${MastercardSecretName}*"
             Events:
                 Schedule:
                     Type: "ScheduleV2"

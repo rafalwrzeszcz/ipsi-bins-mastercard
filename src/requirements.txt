@@ -1,0 +1,2 @@
+mastercard-oauth1-signer==1.7.0
+requests==2.31.0
