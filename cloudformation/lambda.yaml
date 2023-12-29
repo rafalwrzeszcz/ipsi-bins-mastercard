@@ -28,7 +28,7 @@ Resources:
     MasterCardBinsHandler:
         Type: "AWS::Serverless::Function"
         Properties:
-            CodeUri: # TODO
+            CodeUri: "../target/build/"
             Handler: "index.handler"
             MemorySize: 512
             Runtime: "python3.12"

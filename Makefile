@@ -13,10 +13,20 @@ package: build
 	(cd target/build ; zip ../lambda.zip . -r)
 
 deploy: package
-	# TODO
+	sam deploy \
+		--stack-name ${_APP_STACK_NAME} \
+		--s3-bucket ${_APP_DEPLOY_BUCKET} \
+		--capabilities CAPABILITY_IAM \
+		--template cloudformation/lambda.yaml \
+		--parameter-overrides BinsTableName=${BINS_TABLE_NAME} MastercardSecretName=${SECRET_NAME}
 
 destroy:
-	# TODO
+	sam delete --stack-name ${_APP_STACK_NAME}
+
+# helpers
+
+run:
+	(cd target/build && python -c 'from index import handler; handler(None, None)')
 
 # particular files
 
