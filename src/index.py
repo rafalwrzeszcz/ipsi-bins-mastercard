@@ -45,7 +45,7 @@ def fetch_bins():
         logger.info(f"Requesting BINs page {page}…")
         url = f"{api_url}bin-resources/bin-ranges?page={page}&size=500"
         logger.debug(f"URL: {url}")
-        auth_header = oauth.OAuth.get_authorization_header(url, "GET", None, auth["consumerKey"], signing_key)
+        auth_header = oauth.OAuth.get_authorization_header(url, "POST", None, auth["consumerKey"], signing_key)
         response = requests.post(
             url,
             headers={
@@ -55,7 +55,7 @@ def fetch_bins():
         response.raise_for_status()
 
         payload = json.loads(response.content)
-        total = payload["totalRecords"]
+        total = payload["totalItems"]
 
         logger.debug(f" <- {page * 500} / {total}")
         for entry in payload["items"]:
@@ -74,7 +74,6 @@ def handler(event, context=None):
     # this will differ by seconds but will save us re-calculation for every record
     update_time = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    # TODO: fix auth
     # TODO: handle same BIN entries in response?
     # TODO: handle merging with existing record if other provider also have same bin
     for entry in fetch_bins():
