@@ -12,6 +12,7 @@ Needs to be deployed in same region that BINs DynamoDB table exists in.
 
 _In case of CloudFormation deployment all environment variables are provided from stack parameters._
 
+-   `LOG_LEVEL`: Logging level.
 -   `BINS_TABLE_NAME`: DynamoDB table name.
 -   `SECRET_NAME`: AWS Secrets Manager ID where credentials are stored.
 -   `API_URL`: Target API base URL.

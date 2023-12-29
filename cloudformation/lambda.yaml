@@ -4,6 +4,16 @@ Transform:
     - "AWS::Serverless-2016-10-31"
 
 Parameters:
+    LogLevel:
+        Type: "String"
+        Default: "INFO"
+        AllowedValues:
+            - "DEBUG"
+            - "INFO"
+            - "WARNING"
+            - "ERROR"
+            - "CRITICAL"
+
     BinsTableName:
         Type: "String"
 
@@ -26,6 +36,7 @@ Resources:
             Timeout: 900
             Environment:
                 Variables:
+                    LOG_LEVEL: !Ref "LogLevel"
                     BINS_TABLE_NAME: !Ref "BinsTableName"
                     SECRET_NAME: !Ref "MastercardSecretName"
                     API_URL: !Ref "MastercardApiUrl"
