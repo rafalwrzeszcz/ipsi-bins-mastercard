@@ -3,6 +3,7 @@ import boto3
 import datetime
 import json
 import logging
+import mappings
 import os
 import oauth1.authenticationutils as authenticationutils
 import oauth1.oauth as oauth
@@ -16,6 +17,7 @@ secret_name = os.environ["SECRET_NAME"]
 api_url = os.environ["API_URL"]
 log_level = os.environ.get("LOG_LEVEL", "INFO")
 
+logging.basicConfig()
 logger = logging.getLogger()
 logger.setLevel(log_level)
 
@@ -67,6 +69,7 @@ def fetch_bins():
     logger.info(f" =  BINs downloaded")
 
 
+# TODO: separate dependencies into Lambda layer (ask?)
 def handler(event, context=None):
     # this will differ by seconds but will save us re-calculation for every record
     update_time = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -79,13 +82,12 @@ def handler(event, context=None):
         logger.debug(f" -> Saving BIN {current_bin}")
         # TODO: generate entire range of 8-character-long bins
         # TODO: batch write
-        # TODO: update mapping
         table.put_item(
             Item={
                 "bin": current_bin,
-                "cardBrand": ["MASTERCARD"],
+                "cardBrand": mappings.acceptance_brand_to_card_brand(entry["acceptanceBrand"]),
                 "cardType": entry["fundingSource"],
-                "cardSubtype": entry["productDescription"],
+                "cardSubtype": entry["consumerType"],
                 "country": entry["country"]["name"],
                 "issuedOrganization": entry["customerName"],
                 "lastUpdated": update_time,
@@ -93,9 +95,3 @@ def handler(event, context=None):
                 "updateStatus": "COMPLETE",
             }
         )
-
-
-# TODO: separate dependencies into Lambda layer (ask?)
-# TODO: this is temporary for test purposes
-if __name__ == "__main__":
-    handler(None, None)
