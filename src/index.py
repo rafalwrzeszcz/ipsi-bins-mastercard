@@ -69,6 +69,14 @@ def fetch_bins():
     logger.info(f" =  BINs downloaded")
 
 
+def build_bins_range(entry):
+    start_bin = int(str(entry["lowAccountRange"])[:8])
+    end_bin = int(str(entry["highAccountRange"])[:8])
+    logger.debug(f"BINs range: {start_bin} … {end_bin}")
+
+    return [str(current_bin) for current_bin in range(start_bin, end_bin + 1)]
+
+
 # TODO: separate dependencies into Lambda layer (ask?)
 def handler(event, context=None):
     # this will differ by seconds but will save us re-calculation for every record
@@ -77,20 +85,19 @@ def handler(event, context=None):
     # TODO: handle same BIN entries in response?
     # TODO: handle merging with existing record if other provider also have same bin
     for entry in fetch_bins():
-        current_bin = entry["binNum"]
-        logger.debug(f" -> Saving BIN {current_bin}")
-        # TODO: generate entire range of 8-character-long bins
-        # TODO: batch write
-        table.put_item(
-            Item={
-                "bin": current_bin,
-                "cardBrand": mappings.acceptance_brand_to_card_brand(entry["acceptanceBrand"]),
-                "cardType": entry["fundingSource"],
-                "cardSubtype": entry["consumerType"],
-                "country": entry["country"]["name"],
-                "issuedOrganization": entry["customerName"],
-                "lastUpdated": update_time,
-                "submittedForUpdate": update_time,
-                "updateStatus": "COMPLETE",
-            }
-        )
+        for current_bin in build_bins_range(entry):
+            logger.debug(f" -> Saving BIN {current_bin}")
+            # TODO: batch write
+            table.put_item(
+                Item={
+                    "bin": current_bin,
+                    "cardBrand": mappings.acceptance_brand_to_card_brand(entry["acceptanceBrand"]),
+                    "cardType": entry["fundingSource"],
+                    "cardSubtype": entry["consumerType"],
+                    "country": entry["country"]["name"],
+                    "issuedOrganization": entry["customerName"],
+                    "lastUpdated": update_time,
+                    "submittedForUpdate": update_time,
+                    "updateStatus": "COMPLETE",
+                }
+            )
