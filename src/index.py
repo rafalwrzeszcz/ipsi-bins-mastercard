@@ -84,20 +84,20 @@ def handler(event, context=None):
 
     # TODO: handle same BIN entries in response?
     # TODO: handle merging with existing record if other provider also have same bin
-    for entry in fetch_bins():
-        for current_bin in build_bins_range(entry):
-            logger.debug(f" -> Saving BIN {current_bin}")
-            # TODO: batch write
-            table.put_item(
-                Item={
-                    "bin": current_bin,
-                    "cardBrand": mappings.acceptance_brand_to_card_brand(entry["acceptanceBrand"]),
-                    "cardType": entry["fundingSource"],
-                    "cardSubtype": entry["consumerType"],
-                    "country": entry["country"]["name"],
-                    "issuedOrganization": entry["customerName"],
-                    "lastUpdated": update_time,
-                    "submittedForUpdate": update_time,
-                    "updateStatus": "COMPLETE",
-                }
-            )
+    with table.batch_writer() as batch:
+        for entry in fetch_bins():
+            for current_bin in build_bins_range(entry):
+                logger.debug(f" -> Saving BIN {current_bin}")
+                batch.put_item(
+                    Item={
+                        "bin": current_bin,
+                        "cardBrand": mappings.acceptance_brand_to_card_brand(entry["acceptanceBrand"]),
+                        "cardType": entry["fundingSource"],
+                        "cardSubtype": entry["consumerType"],
+                        "country": entry["country"]["name"],
+                        "issuedOrganization": entry["customerName"],
+                        "lastUpdated": update_time,
+                        "submittedForUpdate": update_time,
+                        "updateStatus": "COMPLETE",
+                    }
+                )
