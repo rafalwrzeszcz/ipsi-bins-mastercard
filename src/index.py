@@ -77,27 +77,50 @@ def build_bins_range(entry):
     return [str(current_bin) for current_bin in range(start_bin, end_bin + 1)]
 
 
+def build_items(update_time: str, existing: dict[str, list[str]]):
+    for entry in fetch_bins():
+        card_brand = mappings.acceptance_brand_to_card_brand(entry["acceptanceBrand"])
+
+        for current_bin in build_bins_range(entry):
+            if current_bin not in existing or card_brand not in existing[current_bin]:
+                yield {
+                    "bin": current_bin,
+                    "cardBrand": existing.get(current_bin, []) + [card_brand],
+                    "cardType": entry["fundingSource"],
+                    "cardSubtype": entry["consumerType"],
+                    "country": entry["country"]["name"],
+                    "issuedOrganization": entry["customerName"],
+                    "lastUpdated": update_time,
+                    "submittedForUpdate": update_time,
+                    "updateStatus": "COMPLETE",
+                }
+
+
+def load_db_bins(source):
+    items = source.scan()
+
+    results = {}
+
+    while True:
+        for item in items["Items"]:
+            results[item["bin"]] = item["cardBrand"]
+
+        if "LastEvaluatedKey" in items:
+            items = source.scan(ExclusiveStartKey=items["LastEvaluatedKey"])
+        else:
+            return results
+
+
 # TODO: separate dependencies into Lambda layer (ask?)
 def handler(event, context=None):
     # this will differ by seconds but will save us re-calculation for every record
     update_time = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
 
+    existing = load_db_bins(table)
+
     # TODO: handle same BIN entries in response?
-    # TODO: handle merging with existing record if other provider also have same bin
     with table.batch_writer() as batch:
-        for entry in fetch_bins():
-            for current_bin in build_bins_range(entry):
-                logger.debug(f" -> Saving BIN {current_bin}")
-                batch.put_item(
-                    Item={
-                        "bin": current_bin,
-                        "cardBrand": mappings.acceptance_brand_to_card_brand(entry["acceptanceBrand"]),
-                        "cardType": entry["fundingSource"],
-                        "cardSubtype": entry["consumerType"],
-                        "country": entry["country"]["name"],
-                        "issuedOrganization": entry["customerName"],
-                        "lastUpdated": update_time,
-                        "submittedForUpdate": update_time,
-                        "updateStatus": "COMPLETE",
-                    }
-                )
+        for item in build_items(update_time, existing):
+            current_bin = item["bin"]
+            logger.debug(f" -> Saving BIN {current_bin}")
+            batch.put_item(Item=item)
